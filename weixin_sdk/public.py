@@ -241,8 +241,7 @@ class WxBasic(object):
 
 class WxApi(object):
     """
-    包含微信大部分接口
-    包含获取access_token的静态方法
+    微信基本接口,基类
     """
     BASE_URL = 'https://api.weixin.qq.com'
 
@@ -256,6 +255,8 @@ class WxApi(object):
     def request_access_token(appid, appsecret):
         """
         网络请求获取access_token
+        :param appid:
+        :param appsecret:
         :return: {'access_token':'', 'expires_in':3600}
         """
         url = WxApi.BASE_URL + "/cgi-bin/token?grant_type=client_credential"
@@ -286,6 +287,48 @@ class WxApi(object):
         """
         jdata = self._get('/cgi-bin/ticket/getticket?type=wx_card')
         return {'card_api_ticket':jdata['ticket'], 'expires_in':jdata['expires_in']}
+
+    def get_wechat_ips(self):
+        """获取微信服务器ip地址list"""
+        return self._get('/cgi-bin/getcallbackip').get('ip_list', [])
+
+    def url_long2short(self, long_url):
+        """长连接转短链接,return url-string"""
+        data = {'action':'long2short', 'long_url':long_url}
+        return self._post('/cgi-bin/shorturl', data).get('short_url')
+
+    def create_qrcode(self, action_info, expire_seconds=None):
+        """生成带参数的二维码，expires-seconds为None是永久二维码, 为''时有效期30s"""
+        if expire_seconds == None:
+            data = {"action_name": "QR_LIMIT_SCENE", "action_info": action_info}
+        else:
+            if expire_seconds=='':
+                expire_seconds = 30
+            else:
+                assert isinstance(expire_seconds, int), 'expires_seconds must be int'
+            data = {"expire_seconds": expire_seconds, "action_name": "QR_SCENE", "action_info": action_info}
+        return self._post('/cgi-bin/qrcode/create', data)
+
+    def _get(self, url, params=None):
+        new_url = WxApi.BASE_URL + url
+        final_url = HttpUtil.url_update_query(new_url, access_token=self.access_token)
+        text = HttpUtil.get(final_url, params)
+        return json.loads(text)
+
+    def _post(self, url, ddata):
+        new_url = WxApi.BASE_URL + url
+        final_url = HttpUtil.url_update_query(new_url, access_token=self.access_token)
+        text = HttpUtil.post(final_url, ddata, type='json')
+        return json.loads(text)
+
+
+class WxMsgApi(WxApi):
+    """
+    消息管理,包含:
+    客服管理,发送客服消息,群发消息,发送模板消息
+    """
+    def __init__(self, access_token):
+        super(WxMsgApi, self).__init__(access_token)
 
     def send_text(self, openid, content):
         """
@@ -410,28 +453,31 @@ class WxApi(object):
         }
         return self._send_service_msg(data)
 
-    # def send_wxcard(self, openid, card_id, card_ext):
-    #     """
-    #     发送卡券
-    #     :param openid: 发送对象openid
-    #     :param card_id:
-    #     :param card_ext:
-    #     :return:
-    #     """
-    #     assert ValueError, 'not implement'
-    #     data = {
-    #         "touser": "OPENID",
-    #         "msgtype": "wxcard",
-    #         "wxcard": {
-    #             "card_id": "123dsdajkasd231jhksad",
-    #             "card_ext": "{\"code\":\"\",\"openid\":\"\",\"timestamp\":\"1402057159\",\"signature\":\"017bb17407c8e0058a66d72dcc61632b70f511ad\"}"
-    #         },
-    #     }
-    #     return self._send_service_msg(data)
+    def send_wxcard(self, openid, card_id, card_ext):
+        """
+        发送卡券
+        :param openid: 发送对象openid
+        :param card_id:
+        :param card_ext:
+        :return:
+        """
+        assert ValueError, 'not implement'
+        data = {
+            "touser": "OPENID",
+            "msgtype": "wxcard",
+            "wxcard": {
+                "card_id": "123dsdajkasd231jhksad",
+                "card_ext": "{\"code\":\"\",\"openid\":\"\",\"timestamp\":\"1402057159\",\"signature\":\"017bb17407c8e0058a66d72dcc61632b70f511ad\"}"
+            },
+        }
+        return self._send_service_msg(data)
 
     def add_kfaccount(self, kfaccount, nickname, password):
         """
         添加客服账号
+        :param kfaccount:完整客服账号，格式为:账号前缀@公众号微信号
+        :param nickname: 客服昵称
+        :param password: 客服密码
         """
         data = {
              "kf_account" : kfaccount,
@@ -441,7 +487,12 @@ class WxApi(object):
         return self._post('/customservice/kfaccount/add', data)
 
     def update_kfaccount(self, kfaccount, nickname, password):
-        """修改客服账号"""
+        """
+        修改客服账号
+        :param kfaccount:
+        :param nickname:
+        :param password:
+        """
         data = {
              "kf_account" : kfaccount,
              "nickname" : nickname,
@@ -450,7 +501,12 @@ class WxApi(object):
         return self._post('/customservice/kfaccount/update', data)
 
     def del_kfaccount(self, kfaccount, nickname, password):
-        """删除客服账号"""
+        """
+        删除客服账号
+        :param kfaccount:
+        :param nickname:
+        :param password:
+        """
         data = {
              "kf_account" : kfaccount,
              "nickname" : nickname,
@@ -458,53 +514,26 @@ class WxApi(object):
         }
         return self._post('/customservice/kfaccount/del', data)
 
-    # def set_kfavatar(self, kfaccount, file_stream):
-    #     """设置客服帐号的头像"""
-    #     raise ValueError, 'have not implement'
-    #     pass
+    def set_kfavatar(self, kfaccount, file_stream):
+        """设置客服帐号的头像"""
+        raise ValueError, 'have not implement'
+        pass
 
     def get_kf_list(self):
         """获取所有客服账号, return kf_list"""
         result = self._get('/cgi-bin/customservice/getkflist')
         return result.get('kf_list', [])
 
-    def create_menu(self, menu_dict):
-        """
-        创建自定义菜单
-        全部菜单:http://mp.weixin.qq.com/wiki/10/0234e39a2025342c17a7d23595c6b40a.html
-        个性化菜单:http://mp.weixin.qq.com/wiki/0/c48ccd12b69ae023159b4bfaa7c39c20.html
-        :param menu_dict: 字典对象,包含matchrule时是创建自定义菜单
-        :return:
-        """
-        if 'matchrule' in menu_dict:
-            return self._post('/cgi-bin/menu/addconditional', menu_dict)
-        else:
-            return self._post('/cgi-bin/menu/create', menu_dict)
+    def _send_service_msg(self, data):
+        url = '/cgi-bin/message/custom/send'
+        return self._post(url, data)
 
-    def get_menu(self, userid=None):
-        """
-        获取菜单,
-        1.userid为空——查询全部菜单和个性化菜单
-        2.userid不为空时获取个性化菜单匹配结果,user_id可以是粉丝的OpenID，也可以是粉丝的微信号
-        :return:menu dict
-        """
-        if userid:
-            return self._post('/cgi-bin/menu/trymatch', {'user_id': userid})
-        else:
-            return self._get('/cgi-bin/menu/get')
 
-    def delete_menu(self):
-        """
-        删除所有菜单
-        """
-        return self._get('/cgi-bin/menu/delete')
-
-    def delete_condition_menu(self, menuid):
-        """
-        删除个性化菜单
-        :param menuid: 个性化菜单id
-        """
-        return self._post('/cgi-bin/menu/delconditional', {'menuid':menuid})
+class WxUserApi(WxApi):
+    """
+    用户管理,包含:
+    用户分组管理,设置用户备注,获取用户信息,获取用户列表
+    """
 
     def create_group(self, name):
         """创建分组"""
@@ -568,42 +597,48 @@ class WxApi(object):
         """获取用户列表dict"""
         return self._get('/cgi-bin/user/get?next_openid=%s' % next_openid)
 
-    def get_wechat_ips(self):
-        """获取微信服务器ip地址list"""
-        return self._get('/cgi-bin/getcallbackip').get('ip_list', [])
 
-    def url_long2short(self, long_url):
-        """长连接转短链接,return url-string"""
-        data = {'action':'long2short', 'long_url':long_url}
-        return self._post('/cgi-bin/shorturl', data).get('short_url')
-
-    def create_qrcode(self, action_info, expire_seconds=None):
-        """生成带参数的二维码，expires-seconds为None是永久二维码, 为''时有效期30s"""
-        if expire_seconds == None:
-            data = {"action_name": "QR_LIMIT_SCENE", "action_info": action_info}
+class WxMenuApi(WxApi):
+    """
+    公众号自定义菜单接口
+    """
+    def create_menu(self, menu_dict):
+        """
+        创建自定义菜单
+        全部菜单:http://mp.weixin.qq.com/wiki/10/0234e39a2025342c17a7d23595c6b40a.html
+        个性化菜单:http://mp.weixin.qq.com/wiki/0/c48ccd12b69ae023159b4bfaa7c39c20.html
+        :param menu_dict: 字典对象,包含matchrule时是创建自定义菜单
+        :return:
+        """
+        if 'matchrule' in menu_dict:
+            return self._post('/cgi-bin/menu/addconditional', menu_dict)
         else:
-            if expire_seconds=='':
-                expire_seconds = 30
-            else:
-                assert isinstance(expire_seconds, int), 'expires_seconds must be int'
-            data = {"expire_seconds": expire_seconds, "action_name": "QR_SCENE", "action_info": action_info}
-        return self._post('/cgi-bin/qrcode/create', data)
+            return self._post('/cgi-bin/menu/create', menu_dict)
 
-    def _send_service_msg(self, data):
-        url = '/cgi-bin/message/custom/send'
-        return self._post(url, data)
+    def get_menu(self, userid=None):
+        """
+        获取菜单,
+        1.userid为空——查询全部菜单和个性化菜单
+        2.userid不为空时获取个性化菜单匹配结果,user_id可以是粉丝的OpenID，也可以是粉丝的微信号
+        :return:menu dict
+        """
+        if userid:
+            return self._post('/cgi-bin/menu/trymatch', {'user_id': userid})
+        else:
+            return self._get('/cgi-bin/menu/get')
 
-    def _get(self, url, params=None):
-        new_url = WxApi.BASE_URL + url
-        final_url = HttpUtil.url_update_query(new_url, access_token=self.access_token)
-        text = HttpUtil.get(final_url, params)
-        return json.loads(text)
+    def delete_menu(self):
+        """
+        删除所有菜单
+        """
+        return self._get('/cgi-bin/menu/delete')
 
-    def _post(self, url, ddata):
-        new_url = WxApi.BASE_URL + url
-        final_url = HttpUtil.url_update_query(new_url, access_token=self.access_token)
-        text = HttpUtil.post(final_url, ddata, type='json')
-        return json.loads(text)
+    def delete_condition_menu(self, menuid):
+        """
+        删除个性化菜单
+        :param menuid: 个性化菜单id
+        """
+        return self._post('/cgi-bin/menu/delconditional', {'menuid':menuid})
 
 
 class WxAuthApi(object):
@@ -621,6 +656,8 @@ class WxAuthApi(object):
     def authorized_redirect_url(cls, redirect_uri, appid, scope='snsapi_base', state=''):
         """
         构造授权url
+        :param redirect_uri: 微信会重定向到redirect_uri/?code=&state=
+        :param appid: 公众号appid
         :param scope: 分为snsapi_base(只获取openid)和snsapi_userinfo(获取个人信息)两种
         :param state: 业务状态描述, 微信重定向请求会原样带上此参数
         """

@@ -7,7 +7,7 @@ import tornado.gen
 from tornado.options import options
 from base_handler import BaseHandler
 
-from weixin_sdk.public import WxBasic, WxApi, WxAuthApi
+from weixin_sdk.public import WxBasic, WxApi, WxMenuApi,WxAuthApi
 
 
 def _menu_dict():
@@ -56,7 +56,7 @@ class WechatHandler(BaseHandler):
         pp(message)
         if message.msgType == 'text':
             if message.content == u'菜单':
-                results = WxApi(self.wx_access_token).create_menu(_menu_dict())
+                results = WxMenuApi(self.wx_access_token).create_menu(_menu_dict())
                 self.write(self.wechat.pack_text(results.get('errmsg', '')))
                 return
 
