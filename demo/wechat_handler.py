@@ -10,6 +10,23 @@ from base_handler import BaseHandler
 from weixin_sdk.public import WxBasic, WxApi, WxAuthApi
 
 
+def _menu_dict():
+    return {
+        'button': [
+            {
+                'type': 'view',
+                'name': u'测试菜单',
+                'url':  '/'
+            },
+            {
+                'type': 'view',
+                'name': u'测试',
+                'url': 'http://www.qq.com/'
+            }
+        ]
+    }
+
+
 class WechatHandler(BaseHandler):
 
     def prepare(self):
@@ -18,8 +35,8 @@ class WechatHandler(BaseHandler):
         self.token = options.wx_token
 
         self.wechat = WxBasic(appid=self.appid,
-                             appsecret=self.appsecret,
-                             token=self.token)
+                              appsecret=self.appsecret,
+                              token=self.token)
 
     def get(self):
         if self.wechat.check_signature(self.query_arguments):
@@ -39,43 +56,30 @@ class WechatHandler(BaseHandler):
         pp(message)
         if message.msgType == 'text':
             if message.content == u'菜单':
-                print WxApi(self.wx_access_token).create_menu({
-                    'button':[
-                        {
-                            'type':'view',
-                            'name':u'测试菜单',
-                            'url':options.website+'/'
-                        },
-                        {
-                            'type':'view',
-                            'name':u'JSSDK',
-                            'url':options.website+'/jsapi'
-                        }
-                    ]
-                })
+                results = WxApi(self.wx_access_token).create_menu(_menu_dict())
+                self.write(self.wechat.pack_text(results.get('errmsg', '')))
+                return
 
         reply = self.wechat.pack_text('hi')
         self.write(reply)
-
 
     @property
     def query_arguments(self):
         query = {}
         for k in self.request.arguments.keys():
-            query[k]=self.get_query_argument(k)
+            query[k] = self.get_query_argument(k)
         return query
+
 
     def _check_repeat(self, msg_id):
         old_msg_id = self.cache.get("wechat_message_id")
-        if old_msg_id and old_msg_id==msg_id:
+        if old_msg_id and old_msg_id == msg_id:
             return True
         self.cache.set('wechat_message_id', msg_id)
         return False
 
 
-
 class WechatOAuth2Handler(BaseHandler):
-
     def get(self):
         if self.get_query_argument('code', None):
             code = self.get_query_argument('code')
@@ -88,13 +92,12 @@ class WechatOAuth2Handler(BaseHandler):
                                                              state=self.get_query_argument('state', 'main'))
             self.redirect(redirect_url)
 
-
     def fetch_token(self, code, state):
         resutls = WxAuthApi.get_access_token(
-                    appid=options.wx_appid,
-                    appsecret=options.wx_appsecret,
-                    code=self.get_query_argument('code')
-            )
+                appid=options.wx_appid,
+                appsecret=options.wx_appsecret,
+                code=self.get_query_argument('code')
+        )
         openid = resutls.get('openid', '')
         self.set_secure_cookie('user7', openid)
         if state == 'main':
