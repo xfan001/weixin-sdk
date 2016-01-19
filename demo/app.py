@@ -4,7 +4,7 @@ import tornado.web
 import tornado.ioloop
 from tornado.options import define, options
 
-from wechat_handler import WechatHandler, WechatOAuth2Handler
+from wechat_handler import WechatHandler
 from main_handler import MainHandler
 
 
@@ -17,14 +17,13 @@ options.parse_command_line()
 
 url_partern = [
     (r'/wechat/?', WechatHandler),
-    tornado.web.url(r'/wechat-authorize/', WechatOAuth2Handler, name='wx_auth'),
     (r'/?', MainHandler),
 ]
 
 settings = {
     'autoreload' : True,
     'debug' : True,
-    'cookie_secret':'fdsfaffsfsa'
+    'cookie_secret':'fdsfaffsfsa',
 }
 
 

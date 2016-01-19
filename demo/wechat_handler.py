@@ -3,11 +3,10 @@
 from pprint import pprint as pp
 
 import tornado.web
-import tornado.gen
 from tornado.options import options
 from base_handler import BaseHandler
 
-from weixin_sdk.public import WxBasic, WxApi, WxMenuApi,WxAuthApi
+from weixin_sdk.public import WxBasic, WxApi, WxMenuApi
 
 
 def _menu_dict():
@@ -79,28 +78,3 @@ class WechatHandler(BaseHandler):
         return False
 
 
-class WechatOAuth2Handler(BaseHandler):
-    def get(self):
-        if self.get_query_argument('code', None):
-            code = self.get_query_argument('code')
-            state = self.get_query_argument('state', '')
-            self.fetch_token(code, state)
-        else:
-            redirect_url = WxAuthApi.authorized_redirect_url(redirect_uri=options.website + self.reverse_url('wx_auth'),
-                                                             appid=options.wx_appid,
-                                                             scope='snsapi_base',
-                                                             state=self.get_query_argument('state', 'main'))
-            self.redirect(redirect_url)
-
-    def fetch_token(self, code, state):
-        resutls = WxAuthApi.get_access_token(
-                appid=options.wx_appid,
-                appsecret=options.wx_appsecret,
-                code=self.get_query_argument('code')
-        )
-        openid = resutls.get('openid', '')
-        self.set_secure_cookie('user7', openid)
-        if state == 'main':
-            self.redirect('/', permanent=True)
-        else:
-            pass

@@ -39,7 +39,6 @@ class WxBasic(object):
         signature = query.get('signature','')
         timestamp = query.get('timestamp','')
         nonce = query.get('nonce','')
-        assert signature and timestamp and nonce
         tmp_list = [self._token, timestamp, nonce]
         tmp_list.sort()
         tmp_str = ''.join(tmp_list)

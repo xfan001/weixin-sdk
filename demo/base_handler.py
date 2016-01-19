@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-
+import functools
 import tornado.web
 from tornado.options import options
 
-from weixin_sdk.public import WxApi
+from weixin_sdk.public import WxApi, WxAuthApi
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -43,5 +43,35 @@ class BaseHandler(tornado.web.RequestHandler):
         return token
 
 
-    def get_current_user(self):
-        return self.get_secure_cookie('user7')
+def wx_authenticated(method):
+    """
+    微信web认证装饰器,需实现get_wx_user和set_wx_user方法
+    :return:
+    """
+    @functools.wraps(method)
+    def wrapper(self, *args, **kwargs):
+        if not self.get_wx_user():
+            if self.request.method in ("GET", "HEAD"):
+                if self.get_query_argument('code', None):
+                    code = self.get_query_argument('code')
+                    resutls = WxAuthApi.get_access_token(
+                            appid=options.wx_appid,
+                            appsecret=options.wx_appsecret,
+                            code=code
+                    )
+                    openid = resutls.get('openid', '')
+                    if not openid:
+                        raise tornado.web.HTTPError(401)
+                    self.set_wx_user(openid)
+                else:
+                    url = options.website + self.request.uri
+                    authorize_url = WxAuthApi.authorized_redirect_url(redirect_uri=url,
+                                                                      appid=options.wx_appid,
+                                                                      scope='snsapi_base',
+                                                                      state='STATE')
+                    self.redirect(authorize_url)
+                    return
+            else:
+                raise tornado.web.HTTPError(403)
+        return method(self, *args, **kwargs)
+    return wrapper
