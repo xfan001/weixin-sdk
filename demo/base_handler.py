@@ -46,7 +46,6 @@ class BaseHandler(tornado.web.RequestHandler):
 def wx_authenticated(method):
     """
     微信web认证装饰器,需实现get_wx_user和set_wx_user方法
-    :return:
     """
     @functools.wraps(method)
     def wrapper(self, *args, **kwargs):

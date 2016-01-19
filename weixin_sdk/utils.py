@@ -18,17 +18,21 @@ class HttpUtil:
         return response.text
 
     @staticmethod
-    def post(url, params, type='json'):
+    def post(url, params, type='json', **kwargs):
         if type == 'xml':
             data = Util.encode_data(params)
             data = Util.dict_to_xml(data)
+            response = requests.post(url, data, **kwargs)
+            return response.content
         elif type == 'json':
             data = json.dumps(params, ensure_ascii=False)
             data = data.encode('utf8')
+            response = requests.post(url, data, **kwargs)
+            return response.text
         else:
             data = params
-        response = requests.post(url, data)
-        return response.text
+            response = requests.post(url, data, **kwargs)
+            return response.text
 
     @staticmethod
     def url_update_query(url, **kwargs):
@@ -45,6 +49,7 @@ class Util:
     @staticmethod
     def xml_to_dict(xml_data):
         """xml -> dict"""
+        xml_data = Util.encode_data(xml_data)
         data = {}
         for child in ElementTree.fromstring(xml_data):
             data[child.tag] = child.text
