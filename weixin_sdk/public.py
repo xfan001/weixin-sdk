@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import urllib
+import requests
 
 from crypt.WXBizMsgCrypt import WXBizMsgCrypt
 
@@ -465,6 +466,42 @@ class WxApi(object):
         url = '/cgi-bin/message/custom/send'
         return self._post(url, data)
 
+    ############素材管理API##########
+
+    def get_material_count(self):
+        """获取素材总数"""
+        return self._get('/cgi-bin/material/get_materialcount')
+
+    def get_material_list(self, type, offset, count):
+        """获取素材列表"""
+        assert type in ('image', 'video', 'voice', 'news'), "type must one of them:('image', 'video', 'voice', 'news')"
+        assert count in range(1, 21), 'count must in [1,20]'
+        data = {
+            'type':type,
+            'offset':offset,
+            'count':count
+        }
+        return self._post('/cgi-bin/material/batchget_material', data)
+
+    def download_tmp_material(self, media_id, **kwargs):
+        """
+        获取临时素材(下载多媒体文件)
+        kwargs is same to urlretrieve,
+        :return the same to the return value of urlretrieve
+        """
+        url = self._final_url('/cgi-bin/media/get?media_id=%s' % media_id)
+        return urllib.urlretrieve(url, **kwargs)
+
+    def get_material(self, media_id, type, **kwargs):
+        """获取永久素材"""
+        params = {'media_id' : media_id}
+        if type == 'news' or type == 'video':
+            return self._post('/cgi-bin/material/get_material', params)
+        else:
+            url = self._final_url('/cgi-bin/material/get_material')
+            kwargs.update(data=urllib.urlencode(params))
+            return urllib.urlretrieve(url, **kwargs)
+
     ############用户管理API##########
 
     def create_group(self, name):
@@ -594,14 +631,16 @@ class WxApi(object):
     ###############################
 
     def _get(self, url, params=None):
-        new_url = WxApi.BASE_URL + url
-        final_url = HttpUtil.url_update_query(new_url, access_token=self.access_token)
-        return HttpUtil.get(final_url, params)
+        return HttpUtil.get(self._final_url(url), params)
 
     def _post(self, url, ddata):
+        final_url = self._final_url(url)
+        return HttpUtil.post(final_url, ddata, ctype='json')
+
+    def _final_url(self, url):
         new_url = WxApi.BASE_URL + url
         final_url = HttpUtil.url_update_query(new_url, access_token=self.access_token)
-        return HttpUtil.post(final_url, ddata, ctype='json')
+        return final_url
 
 
 class WxMsgApi(WxApi):
