@@ -12,23 +12,26 @@ from xml.etree import ElementTree
 
 class HttpUtil:
 
+    def __init__(self):
+        pass
+
     @staticmethod
     def get(url, params=None):
         response = requests.get(url, params)
         return json.loads(response.content)
 
     @staticmethod
-    def post(url, params, type='json', **kwargs):
-        if type == 'xml':
-            data = Util.encode_data(params)
-            data = Util.dict_to_xml(data)
-            response = requests.post(url, data, **kwargs)
-            return response.content
-        elif type == 'json':
+    def post(url, params, ctype='json', **kwargs):
+        if ctype == 'json':
             data = json.dumps(params, ensure_ascii=False)
             data = data.encode('utf8')
             response = requests.post(url, data, **kwargs)
             return json.loads(response.content)
+        elif ctype == 'xml':
+            data = Util.encode_data(params)
+            data = Util.dict_to_xml(data)
+            response = requests.post(url, data, **kwargs)
+            return response.content
         else:
             data = params
             response = requests.post(url, data, **kwargs)

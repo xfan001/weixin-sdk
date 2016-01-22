@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import json
 import urllib
 
 from crypt.WXBizMsgCrypt import WXBizMsgCrypt
@@ -240,7 +239,7 @@ class WxBasic(object):
 
 class WxApi(object):
     """
-    微信基本接口,基类
+    微信基本接口,基类,返回值为dict
     """
     BASE_URL = 'https://api.weixin.qq.com'
 
@@ -286,45 +285,7 @@ class WxApi(object):
         jdata = self._get('/cgi-bin/ticket/getticket?type=wx_card')
         return {'card_api_ticket':jdata['ticket'], 'expires_in':jdata['expires_in']}
 
-    def get_wechat_ips(self):
-        """获取微信服务器ip地址list"""
-        return self._get('/cgi-bin/getcallbackip').get('ip_list', [])
-
-    def url_long2short(self, long_url):
-        """长连接转短链接,return url-string"""
-        data = {'action':'long2short', 'long_url':long_url}
-        return self._post('/cgi-bin/shorturl', data).get('short_url')
-
-    def create_qrcode(self, action_info, expire_seconds=None):
-        """生成带参数的二维码，expires-seconds为None是永久二维码, 为''时有效期30s"""
-        if expire_seconds == None:
-            data = {"action_name": "QR_LIMIT_SCENE", "action_info": action_info}
-        else:
-            if expire_seconds=='':
-                expire_seconds = 30
-            else:
-                assert isinstance(expire_seconds, int), 'expires_seconds must be int'
-            data = {"expire_seconds": expire_seconds, "action_name": "QR_SCENE", "action_info": action_info}
-        return self._post('/cgi-bin/qrcode/create', data)
-
-    def _get(self, url, params=None):
-        new_url = WxApi.BASE_URL + url
-        final_url = HttpUtil.url_update_query(new_url, access_token=self.access_token)
-        return HttpUtil.get(final_url, params)
-
-    def _post(self, url, ddata):
-        new_url = WxApi.BASE_URL + url
-        final_url = HttpUtil.url_update_query(new_url, access_token=self.access_token)
-        return HttpUtil.post(final_url, ddata, type='json')
-
-
-class WxMsgApi(WxApi):
-    """
-    消息管理,包含:
-    客服管理,发送客服消息,群发消息,发送模板消息
-    """
-    def __init__(self, access_token):
-        super(WxMsgApi, self).__init__(access_token)
+    ##############消息API############
 
     def send_text(self, openid, content):
         """
@@ -449,25 +410,6 @@ class WxMsgApi(WxApi):
         }
         return self._send_service_msg(data)
 
-    def send_wxcard(self, openid, card_id, card_ext):
-        """
-        发送卡券
-        :param openid: 发送对象openid
-        :param card_id:
-        :param card_ext:
-        :return:
-        """
-        assert ValueError, 'not implement'
-        data = {
-            "touser": "OPENID",
-            "msgtype": "wxcard",
-            "wxcard": {
-                "card_id": "123dsdajkasd231jhksad",
-                "card_ext": "{\"code\":\"\",\"openid\":\"\",\"timestamp\":\"1402057159\",\"signature\":\"017bb17407c8e0058a66d72dcc61632b70f511ad\"}"
-            },
-        }
-        return self._send_service_msg(data)
-
     def add_kfaccount(self, kfaccount, nickname, password):
         """
         添加客服账号
@@ -517,19 +459,13 @@ class WxMsgApi(WxApi):
 
     def get_kf_list(self):
         """获取所有客服账号, return kf_list"""
-        result = self._get('/cgi-bin/customservice/getkflist')
-        return result.get('kf_list', [])
+        return self._get('/cgi-bin/customservice/getkflist')
 
     def _send_service_msg(self, data):
         url = '/cgi-bin/message/custom/send'
         return self._post(url, data)
 
-
-class WxUserApi(WxApi):
-    """
-    用户管理,包含:
-    用户分组管理,设置用户备注,获取用户信息,获取用户列表
-    """
+    ############用户管理API##########
 
     def create_group(self, name):
         """创建分组"""
@@ -538,12 +474,11 @@ class WxUserApi(WxApi):
 
     def get_groups(self):
         """获取全部分组"""
-        results = self._get('/cgi-bin/groups/get')
-        return results.get('groups')
+        return self._get('/cgi-bin/groups/get')
 
     def get_group_by_openid(self, openid):
         """获取用户所在组"""
-        return self._post('/cgi-bin/groups/getid', {'openid':openid}).get('groupid')
+        return self._post('/cgi-bin/groups/getid', {'openid':openid})
 
     def rename_group(self, group_id, new_name):
         """重命名分组"""
@@ -593,11 +528,8 @@ class WxUserApi(WxApi):
         """获取用户列表dict"""
         return self._get('/cgi-bin/user/get?next_openid=%s' % next_openid)
 
+    ###########自定义菜单API##########
 
-class WxMenuApi(WxApi):
-    """
-    公众号自定义菜单接口
-    """
     def create_menu(self, menu_dict):
         """
         创建自定义菜单
@@ -636,6 +568,48 @@ class WxMenuApi(WxApi):
         """
         return self._post('/cgi-bin/menu/delconditional', {'menuid':menuid})
 
+    ##############功能#############
+
+    def get_wechat_ips(self):
+        """获取微信服务器ip地址"""
+        return self._get('/cgi-bin/getcallbackip')
+
+    def url_long2short(self, long_url):
+        """长连接转短链接,return url-string"""
+        data = {'action':'long2short', 'long_url':long_url}
+        return self._post('/cgi-bin/shorturl', data)
+
+    def create_qrcode(self, action_info, expire_seconds=None):
+        """生成带参数的二维码，expires-seconds为None是永久二维码, 为''时有效期30s"""
+        if expire_seconds == None:
+            data = {"action_name": "QR_LIMIT_SCENE", "action_info": action_info}
+        else:
+            if expire_seconds=='':
+                expire_seconds = 30
+            else:
+                assert isinstance(expire_seconds, int), 'expires_seconds must be int'
+            data = {"expire_seconds": expire_seconds, "action_name": "QR_SCENE", "action_info": action_info}
+        return self._post('/cgi-bin/qrcode/create', data)
+
+    ###############################
+
+    def _get(self, url, params=None):
+        new_url = WxApi.BASE_URL + url
+        final_url = HttpUtil.url_update_query(new_url, access_token=self.access_token)
+        return HttpUtil.get(final_url, params)
+
+    def _post(self, url, ddata):
+        new_url = WxApi.BASE_URL + url
+        final_url = HttpUtil.url_update_query(new_url, access_token=self.access_token)
+        return HttpUtil.post(final_url, ddata, ctype='json')
+
+
+class WxMsgApi(WxApi):
+    pass
+class WxUserApi(WxApi):
+    pass
+class WxMenuApi(WxApi):
+    pass
 
 class WxAuthApi(object):
     """
@@ -726,13 +700,9 @@ class WxJsApi(object):
         }
 
 
-# class WxCardApi(object):
-#
-#     """
-#     微信卡券接口
-#     """
-#
-#     def __int__(self):
-#         pass
+
+if __name__ == '__main__':
+    pass
+
 
 

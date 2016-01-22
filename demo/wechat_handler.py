@@ -6,7 +6,7 @@ import tornado.web
 from tornado.options import options
 from base_handler import BaseHandler
 
-from weixin_sdk.public import WxBasic, WxApi, WxMenuApi, WxMsgApi, WxUserApi
+from weixin_sdk.public import WxBasic, WxApi
 
 
 def _menu_dict():
@@ -55,7 +55,7 @@ class WechatHandler(BaseHandler):
         pp(message)
         if message.msgType == 'text':
             if message.content == u'菜单':
-                results = WxMenuApi(self.wx_access_token).create_menu(_menu_dict())
+                results = WxApi(self.wx_access_token).create_menu(_menu_dict())
                 self.write(self.wechat.pack_text(results.get('errmsg', '')))
                 return
 
@@ -65,13 +65,7 @@ class WechatHandler(BaseHandler):
         self.write(reply)
 
     def test(self, message):
-        self.wx_api = WxApi(self.wx_access_token)
-        self.wxuser_api = WxUserApi(self.wx_access_token)
-        self.wx_msg_api = WxMsgApi(self.wx_access_token)
-
-        self.wx_msg_api.send_text(message.fromUserName, u'测试客服消息')
-        print self.wxuser_api.get_groups()
-        print self.wx_api.get_wechat_ips()
+        pass
 
 
     @property
