@@ -1,13 +1,3 @@
-# weixin-sdk
-微信公众平台python SDK
-
-# 安装
-
-    pip install git+https://github.com/xfan001/weixin-sdk
-
-# 基本使用(以tornado为例)
-
-```
 # -*- coding: utf-8 -*-
 import tornado.web, tornado.ioloop
 from weixin_sdk.public import WxBasic
@@ -56,21 +46,3 @@ if __name__ == '__main__':
     app.listen(8888)
     print('server starting...')
     tornado.ioloop.IOLoop.instance().start()
-```
-
-# 接口
-
-## weixin-sdk.public包含类
-
-### 1. WxBasic-基本消息解析及被动回复,包含签名校验和加解密
-
-### 2. WxApi-微信基本接口
-
-### 3. WxAuthApi-网页授权获取用户信息
-
-### 4. WxJsApi-微信JS-API
-
-
-## weixin-sdk.pay包含类
-
-### 1. WxPay-微信支付
