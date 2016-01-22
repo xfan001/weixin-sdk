@@ -217,6 +217,18 @@ class WxBasic(object):
         xml_data += "</Articles></xml>"
         return self._ensure_encrypt(xml_data)
 
+    def pack_transfer_kf(self):
+        """回复转发到客服系统的消息"""
+        template = '''
+                <xml>
+                <ToUserName><![CDATA[%s]]></ToUserName>
+                <FromUserName><![CDATA[%s]]></FromUserName>
+                <CreateTime>%s</CreateTime>
+                <MsgType><![CDATA[transfer_customer_service]]></MsgType>
+                </xml>'''
+        xml_data = template % (self.message.fromUserName, self.message.toUserName, Util.timestamp())
+        return self._ensure_encrypt(xml_data)
+
     def _ensure_encrypt(self, xml_data):
         """判断是否需要加密消息"""
         if self._aes_key:
