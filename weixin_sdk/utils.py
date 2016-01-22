@@ -15,7 +15,7 @@ class HttpUtil:
     @staticmethod
     def get(url, params=None):
         response = requests.get(url, params)
-        return response.json()
+        return json.loads(response.content)
 
     @staticmethod
     def post(url, params, type='json', **kwargs):
@@ -28,11 +28,11 @@ class HttpUtil:
             data = json.dumps(params, ensure_ascii=False)
             data = data.encode('utf8')
             response = requests.post(url, data, **kwargs)
-            return response.json()
+            return json.loads(response.content)
         else:
             data = params
             response = requests.post(url, data, **kwargs)
-            return response.text
+            return response.json()
 
     @staticmethod
     def url_update_query(url, **kwargs):

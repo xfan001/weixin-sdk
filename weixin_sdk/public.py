@@ -5,8 +5,8 @@ import urllib
 
 from crypt.WXBizMsgCrypt import WXBizMsgCrypt
 
-from .utils import HttpUtil, Util, ObjectDict
-from .utils import WxError
+from utils import HttpUtil, Util, ObjectDict
+from utils import WxError
 
 
 class WxBasic(object):
@@ -260,8 +260,7 @@ class WxApi(object):
         """
         url = WxApi.BASE_URL + "/cgi-bin/token?grant_type=client_credential"
         params = {'appid': appid, 'secret': appsecret}
-        jdata = HttpUtil.get(url, params)
-        return jdata
+        return HttpUtil.get(url, params)
 
     @property
     def access_token(self):
@@ -311,14 +310,12 @@ class WxApi(object):
     def _get(self, url, params=None):
         new_url = WxApi.BASE_URL + url
         final_url = HttpUtil.url_update_query(new_url, access_token=self.access_token)
-        jdata = HttpUtil.get(final_url, params)
-        return jdata
+        return HttpUtil.get(final_url, params)
 
     def _post(self, url, ddata):
         new_url = WxApi.BASE_URL + url
         final_url = HttpUtil.url_update_query(new_url, access_token=self.access_token)
-        jdata = HttpUtil.post(final_url, ddata, type='json')
-        return jdata
+        return HttpUtil.post(final_url, ddata, type='json')
 
 
 class WxMsgApi(WxApi):
@@ -672,8 +669,7 @@ class WxAuthApi(object):
         :return: 返回dict. keys:access_token,expires_in,refresh_token,openid,scope
         """
         params = {'appid': appid, 'secret': appsecret, 'code':code, 'grant_type':'authorization_code'}
-        jdata = HttpUtil.get(cls._ACCESS_TOKEN_URL, params)
-        return jdata
+        return HttpUtil.get(cls._ACCESS_TOKEN_URL, params)
 
     @classmethod
     def refresh_access_token(cls, appid, refresh_token):
@@ -682,8 +678,7 @@ class WxAuthApi(object):
         :return: 返回dict, keys:access_token,expires_in,refresh_token,openid,scope
         """
         params = {'appid':appid, 'grant_type':'refresh_token', 'refresh_token':refresh_token}
-        jdata = HttpUtil.get(cls._REFRESH_TOKEN_UEL, params)
-        return jdata
+        return HttpUtil.get(cls._REFRESH_TOKEN_UEL, params)
 
     @classmethod
     def check_access_token(cls, openid, access_token):
@@ -691,8 +686,7 @@ class WxAuthApi(object):
         检验授权凭证（access_token）是否有效
         """
         params = {'access_token':access_token, 'openid': openid}
-        jdata = HttpUtil.get(cls._CHECK_TOKEN_URL, params)
-        return jdata
+        return HttpUtil.get(cls._CHECK_TOKEN_URL, params)
 
     @classmethod
     def get_user_info(cls, openid, access_token, lang='zh_CN'):
@@ -701,8 +695,7 @@ class WxAuthApi(object):
         :return:用户信息dict
         """
         params = {'access_token': access_token, 'openid': openid, 'lang':lang}
-        jdata = HttpUtil.get(cls._USERINFO_URL, params)
-        return jdata
+        return HttpUtil.get(cls._USERINFO_URL, params)
 
 
 class WxJsApi(object):
