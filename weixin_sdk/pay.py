@@ -191,7 +191,7 @@ class WxPay(object):
         """
         if self.BASE_URL not in url:
             url = self.BASE_URL + url
-        xml_data = HttpUtil.post(url, ddata, type='xml', verify=verify)
+        xml_data = HttpUtil.post(url, ddata, ctype='xml', verify=verify)
         results = Util.xml_to_dict(xml_data)
 
         if results.get('return_code', '') == 'SUCCESS':
