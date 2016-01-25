@@ -22,6 +22,7 @@ class HttpUtil:
 
     @staticmethod
     def post(url, params, ctype='json', **kwargs):
+        """post请求,传入dict,返回dict,内部处理json或xml"""
         if ctype == 'json':
             data = json.dumps(params, ensure_ascii=False)
             data = data.encode('utf8')
@@ -31,7 +32,7 @@ class HttpUtil:
             data = Util.encode_data(params)
             data = Util.dict_to_xml(data)
             response = requests.post(url, data, **kwargs)
-            return response.content
+            return Util.xml_to_dict(response.content)
         else:
             data = params
             response = requests.post(url, data, **kwargs)

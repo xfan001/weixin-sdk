@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import urllib
-import requests
 
 from crypt.WXBizMsgCrypt import WXBizMsgCrypt
 
@@ -468,7 +467,7 @@ class WxApi(object):
     def set_kfavatar(self, kfaccount, file_stream):
         """设置客服帐号的头像"""
         raise ValueError, 'have not implement'
-        pass
+        print kfaccount
 
     def get_kf_list(self):
         """获取所有客服账号, return kf_list"""
@@ -630,7 +629,7 @@ class WxApi(object):
 
     def create_qrcode(self, action_info, expire_seconds=None):
         """生成带参数的二维码，expires-seconds为None是永久二维码, 为''时有效期30s"""
-        if expire_seconds == None:
+        if expire_seconds is None:
             data = {"action_name": "QR_LIMIT_SCENE", "action_info": action_info}
         else:
             if expire_seconds=='':
