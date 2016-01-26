@@ -3,7 +3,7 @@
 
 ## 安装
 
-    pip install git+https://github.com/xfan001/weixin-sdk
+    pip install weixin-sdk
 
 ## 基本使用(以tornado为例)
 

@@ -570,7 +570,7 @@ class WxApi(object):
             url = '/cgi-bin/user/info?openid=%s&lang=%s' % (openids, lang)
             return self._get(url)
         else:
-            raise ValueError, 'openids must be string or list'
+            raise WxError('openids must be string or list')
 
     def get_user_list(self, next_openid=''):
         """获取用户列表dict"""
