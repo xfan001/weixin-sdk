@@ -422,6 +422,22 @@ class WxApi(object):
         }
         return self._send_service_msg(data)
 
+    def send_template_msg(self, openid, template_id, url, data):
+        """
+        发送模板消息,
+        :param openid: 发送对象openid
+        :param template_id: 模板id
+        :param url: 点击消息跳转url
+        :param data: http://mp.weixin.qq.com/wiki/5/6dde9eaa909f83354e0094dc3ad99e05.html
+        """
+        data = {
+            'touser': openid,
+            'template_id': template_id,
+            'url':url,
+            'data':data
+        }
+        return self._post('/cgi-bin/message/template/send', data)
+
     def add_kfaccount(self, kfaccount, nickname, password):
         """
         添加客服账号
@@ -464,10 +480,10 @@ class WxApi(object):
         }
         return self._post('/customservice/kfaccount/del', data)
 
-    def set_kfavatar(self, kfaccount, file_stream):
-        """设置客服帐号的头像"""
-        raise ValueError, 'have not implement'
-        print kfaccount
+    # def set_kfavatar(self, kfaccount, file_stream):
+    #     """设置客服帐号的头像,还没实现"""
+    #     raise ValueError, 'have not implement'
+    #     print kfaccount
 
     def get_kf_list(self):
         """获取所有客服账号, return kf_list"""

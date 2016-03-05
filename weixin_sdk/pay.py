@@ -159,9 +159,14 @@ class WxPay(object):
 
 
     @staticmethod
-    def parse_pay_result(body):
+    def parse_notify_result(body):
         """将request body的xml格式转为dict"""
         return Util.xml_to_dict(body)
+
+    @staticmethod
+    def pack_notify_response(return_code='SUCCESS', return_msg='OK'):
+        """将支付结果通知请求的响应结果打包成xml"""
+        return Util.dict_to_xml({'return_code':return_code, 'return_msg':return_msg})
 
 
     def _generate_sign(self, **kwargs):
