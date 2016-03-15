@@ -158,13 +158,17 @@ class WxPay(object):
         return self._post('/pay/refundquery', kwargs)
 
 
-    @staticmethod
-    def parse_notify_result(body):
-        """将request body的xml格式转为dict"""
-        return Util.xml_to_dict(body)
+    def parse_notify_result(self, body):
+        """
+        微信服务器通知支付结果时使用
+        将request body的xml格式转为dict,签名错误时返回None
+        """
+        dresult = Util.xml_to_dict(body)
+        if self._generate_sign(**dresult) != dresult.get('sign'):
+            return None
+        return dresult
 
-    @staticmethod
-    def pack_notify_response(return_code='SUCCESS', return_msg='OK'):
+    def pack_notify_response(self, return_code='SUCCESS', return_msg='OK'):
         """将支付结果通知请求的响应结果打包成xml"""
         return Util.dict_to_xml({'return_code':return_code, 'return_msg':return_msg})
 
