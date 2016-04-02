@@ -172,6 +172,15 @@ class WxPay(object):
         """将支付结果通知请求的响应结果打包成xml"""
         return Util.dict_to_xml({'return_code':return_code, 'return_msg':return_msg})
 
+    def sign_for_jspay(self, prepay_id):
+        """jssdk调起支付时需要的sign"""
+        timestamp = Util.timestamp()
+        nonce_str = Util.generate_nonce(15)
+        package = 'prepay_id=%s' % prepay_id
+        sign_type = 'MD5'
+        pay_sign = self._generate_sign(appId=self._appid, timeStamp=timestamp,
+                                nonceStr=nonce_str, package=package, signType=sign_type)
+        return {'timestamp':timestamp, 'nonceStr':nonce_str, 'package':package, 'signType':sign_type, 'paySign':pay_sign}
 
     def _generate_sign(self, **kwargs):
         """
