@@ -9,7 +9,7 @@ class WxPay(object):
     微信支付相关接口, 仅考虑NATIVE和JSAPI两种支付方式
     """
 
-    BASE_URL = 'https://api.mch.weixin.qq.com/'
+    BASE_URL = 'https://api.mch.weixin.qq.com'
 
     def __init__(self, appid, mch_id, sign_key, cert=None):
         """
