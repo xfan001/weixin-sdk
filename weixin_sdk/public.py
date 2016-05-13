@@ -422,7 +422,7 @@ class WxApi(object):
         }
         return self._send_service_msg(data)
 
-    def send_template_msg(self, openid, template_id, url, data):
+    def send_template_msg(self, openid, template_id, data, url='', topcolor=None):
         """
         发送模板消息,
         :param openid: 发送对象openid
@@ -436,6 +436,8 @@ class WxApi(object):
             'url':url,
             'data':data
         }
+        if topcolor:
+            data["topcolor"] = topcolor
         return self._post('/cgi-bin/message/template/send', data)
 
     def add_kfaccount(self, kfaccount, nickname, password):
