@@ -6,7 +6,7 @@ from utils import HttpUtil, Util
 class WxPay(object):
 
     """
-    微信支付相关接口, 仅考虑NATIVE和JSAPI两种支付方式
+    微信支付相关接口, 考虑NATIVE和JSAPI和APP支付
     """
 
     BASE_URL = 'https://api.mch.weixin.qq.com'
@@ -14,7 +14,7 @@ class WxPay(object):
     def __init__(self, appid, mch_id, sign_key, cert=None):
         """
         初始化支付对象
-        :param appid: 公众号appid
+        :param appid: 公众号appid(JSAPI和NATIVE), 开放平台appid(APP)
         :param mch_id: 商户id
         :param sign_key: 商户签名密钥
         :param cert: 商户证书文件,涉及到资金回滚的接口需要
@@ -45,24 +45,30 @@ class WxPay(object):
         if not notify_url:
             raise WxPayError(u"异步通知url未设置")
 
+        #检查ip
+        if not kwargs.get('spbill_create_ip'):
+            if trade_type == 'NATIVE':
+                kwargs.update(spbill_create_ip=Util.get_local_ip())
+            else:
+                raise WxPayError(u'APP和网页支付需提交用户端ip')
+
         if trade_type == 'NATIVE':
             assert kwargs.get('product_id'), u'trade_type为NATIVE时，product_id为必填参数'
-            kwargs.update(spbill_create_ip=Util.get_local_ip())
         elif trade_type == 'JSAPI':
             assert kwargs.get('openid'), u'trade_type为JSAPI时，openid为必填参数！'
-            if not kwargs.get('spbill_create_ip'):
-                raise WxPayError(u'网页支付应提交用户端ip')
+        elif trade_type == 'APP':
+            pass
         else:
-            raise WxPayError(u'仅考虑NATIVE和JSAPI两种支付方式')
+            raise WxPayError(u"支付类型trade_type错误,为('JSAPI', 'APP', 'NATIVE')之一")
 
         kwargs.update(device_info='WEB')
 
+        kwargs.update(appid=self._appid, mch_id=self._mchid)
         kwargs.update(trade_type=trade_type,
                       out_trade_no=out_trade_no,
                       body=body,
                       total_fee=total_fee,
                       notify_url=notify_url)
-        kwargs.update(appid=self._appid, mch_id=self._mchid)
         kwargs.update(nonce_str=Util.generate_nonce(20))
 
         kwargs.update(sign=self._generate_sign(**kwargs)) #sign
@@ -134,7 +140,7 @@ class WxPay(object):
 
         kwargs.update(sign=self._generate_sign(**kwargs))  #sign
 
-        return self._post('/secapi/pay/refund', kwargs)
+        return self._post('/secapi/pay/refund', kwargs, cert=True)
 
 
     def query_refund(self, transaction_id='', out_trade_no='', out_refund_no='', refund_id='', **kwargs):
@@ -155,7 +161,7 @@ class WxPay(object):
         )
         kwargs.update(sign=self._generate_sign(**kwargs))  #sign
 
-        return self._post('/pay/refundquery', kwargs)
+        return self._post('/pay/refundquery', kwargs, cert=True)
 
 
     def parse_notify_result(self, body):
@@ -197,11 +203,9 @@ class WxPay(object):
         return sign
 
 
-    def _post(self, url, ddata):
-        return self._common_post(url, ddata)
-
-    def _post_with_cert(self, url, ddata):
-        return self._common_post(url, ddata, verify=self._cert)
+    def _post(self, url, ddata, cert=False):
+        verify_cert = self._cert if cert else None
+        return self._common_post(url, ddata, verify=verify_cert)
 
     def _common_post(self, url, ddata, verify=None):
         """
@@ -215,7 +219,8 @@ class WxPay(object):
             assert results.get('sign') == self._generate_sign(**results), 'sign error, not from wechat pay server'
             if results.get('result_code','') == 'SUCCESS':
                 return 0, results
-            else:return 1, results.get('err_code_des', '')
+            else:
+                return 1, results.get('err_code_des', '')
         else:
             return 1,results.get('return_msg', '')
 
