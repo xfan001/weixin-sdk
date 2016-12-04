@@ -17,14 +17,17 @@ class WxPay(object):
         :param appid: 公众号appid(JSAPI和NATIVE), 开放平台appid(APP)
         :param mch_id: 商户id
         :param sign_key: 商户签名密钥
-        :param cert: 商户证书文件,涉及到资金回滚的接口需要
+        :param cert: 商户证书文件,tuple:
+                     (apiclient_cert.pem路径, apiclient_key.pem路径),
+                     涉及到资金回滚的接口需要
         """
         self._appid = appid
         self._mchid = mch_id
         self._sign_key = sign_key
         self._cert = cert
 
-    def unified_order(self, trade_type, out_trade_no, body, total_fee, notify_url, **kwargs):
+    def unified_order(self, trade_type, out_trade_no, body,
+                      total_fee, notify_url, **kwargs):
         """
         微信统一下单api(文档http://pay.weixin.qq.com/wiki/doc/api/index.php?chapter=9_1)
         :param trade_type: 交易类型('JSAPI', 'APP', 'NATIVE')
@@ -135,15 +138,17 @@ class WxPay(object):
             refund_fee=refund_fee,
             transaction_id=transaction_id,
             out_trade_no=out_trade_no,
-            nonce_str=Util.generate_nonce(20)
+            nonce_str=Util.generate_nonce(20),
+            op_user_id=self._mchid
         )
 
         kwargs.update(sign=self._generate_sign(**kwargs))  #sign
 
-        return self._post('/secapi/pay/refund', kwargs, cert=True)
+        return self._post('/secapi/pay/refund', kwargs, need_cert=True)
 
 
-    def query_refund(self, transaction_id='', out_trade_no='', out_refund_no='', refund_id='', **kwargs):
+    def query_refund(self, transaction_id='', out_trade_no='',
+                     out_refund_no='', refund_id='', **kwargs):
         """
         查询退款, 参数四选一
         """
@@ -161,7 +166,7 @@ class WxPay(object):
         )
         kwargs.update(sign=self._generate_sign(**kwargs))  #sign
 
-        return self._post('/pay/refundquery', kwargs, cert=True)
+        return self._post('/pay/refundquery', kwargs, need_cert=True)
 
 
     def parse_notify_result(self, body):
@@ -203,17 +208,23 @@ class WxPay(object):
         return sign
 
 
-    def _post(self, url, ddata, cert=False):
-        verify_cert = self._cert if cert else None
-        return self._common_post(url, ddata, verify=verify_cert)
+    def _post(self, url, ddata, need_cert=False):
+        if need_cert:
+            if not self._cert:
+                raise WxPayError(u"该接口需要双向证书")
+            else:
+                verify_cert = self._cert
+        else:
+            verify_cert = None
+        return self._common_post(url, ddata, cert=verify_cert)
 
-    def _common_post(self, url, ddata, verify=None):
+    def _common_post(self, url, ddata, cert=None):
         """
         :return: (ret_code, dict_data/err_msg)
         """
         if self.BASE_URL not in url:
             url = self.BASE_URL + url
-        results = HttpUtil.post(url, ddata, ctype='xml', verify=verify)
+        results = HttpUtil.post(url, ddata, ctype='xml', cert=cert)
 
         if results.get('return_code', '') == 'SUCCESS':
             assert results.get('sign') == self._generate_sign(**results), 'sign error, not from wechat pay server'

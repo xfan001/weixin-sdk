@@ -60,6 +60,8 @@
 
 ## 接口
 
+(要知道接口具体调用形式，直接定位到源代码函数查看即可~)
+
 ### weixin-sdk.public包含类
 
 **1. WxBasic-基本消息解析及被动回复,包含签名校验和加解密**
@@ -159,13 +161,15 @@ staticmethod:
 
 **1. WxPay-微信支付**
 
-构造参数: appid, mch_id(商户号), sign_key(商户签名密钥), cert=None(商户证书文件,涉及到资金回滚的接口需要)
+构造参数: appid, mch_id(商户号), sign_key(商户签名密钥), cert=None(商户证书文件,tuple:(apiclient_cert.pem路径, apiclient_key.pem路径),涉及到资金回滚的接口需要)
 
 相关接口:
 
 - unified_order 微信统一下单api
 - query_order 查询订单api
 - close_order 关闭交易
+- refund 退款
+- query_refund 查询退款
 
 其他功能接口:
 

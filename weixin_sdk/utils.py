@@ -17,7 +17,7 @@ class HttpUtil:
 
     @staticmethod
     def get(url, params=None):
-        response = requests.get(url, params)
+        response = requests.get(url, params=params)
         return json.loads(response.content)
 
     @staticmethod
